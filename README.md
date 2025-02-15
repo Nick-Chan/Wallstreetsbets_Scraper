@@ -6,6 +6,7 @@ This project is a Python-based Reddit comment scraper that fetches discussion th
 
 - **Fetch Reddit Discussions:** Uses Reddit's official API via [PRAW](https://praw.readthedocs.io/) to access discussion posts (Weekly earnings thread/daily threads)
 - **TBA:** Uses AI to summarise the general consensus for each stock before their earning's reports
+- - **TBA:** Frontend dashboard to view each company and their general consensus
 
 ## Prerequisites
 
