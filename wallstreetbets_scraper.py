@@ -14,7 +14,7 @@ reddit = praw.Reddit(client_id=CLIENT_ID,
                      user_agent=USER_AGENT)
 
 # Provide the URL of the Reddit post (discussion) you want to scrape
-submission_url = 'https://www.reddit.com/r/wallstreetbets/comments/1ijxkzt/weekly_earnings_thread_210_214/'  # TODO: Change to search for latest weekly thread
+submission_url = 'https://www.reddit.com/r/wallstreetbets/comments/1ipdac5/weekly_earnings_thread_217_221/'  # TODO: Change to search for latest weekly thread
 
 # Fetch the submission (post)
 submission = reddit.submission(url=submission_url)
@@ -23,43 +23,52 @@ submission = reddit.submission(url=submission_url)
 submission.comments.replace_more(limit=None)
 
 def combine_comments(comment, separator=" | "):
-    """
-    Recursively combines a comment's body with its replies into one single line.
-    Newlines within each comment are removed so that the output is on one line.
-    
-    Args:
-        comment (praw.models.Comment): A Reddit comment object.
-        separator (str): The string to insert between comment levels.
-    
-    Returns:
-        str: The combined comment text.
-    """
-    # Remove extra whitespace and newlines from the comment text
     combined = comment.body.strip().replace('\n', ' ')
-    
-    # Process each reply recursively if available
     if hasattr(comment, 'replies'):
         replies_text = []
         for reply in comment.replies:
-            # Make sure we're only processing actual comments (skip MoreComments if any)
             if isinstance(reply, praw.models.Comment):
                 replies_text.append(combine_comments(reply, separator))
         if replies_text:
-            # Append the replies to the original comment text using the separator
             combined += separator + separator.join(replies_text)
     return combined
 
 # Process each top-level comment and combine its nested replies
 combined_comments = []
 for top_comment in submission.comments:
-    # Ensure it's a proper comment object
     if isinstance(top_comment, praw.models.Comment):
         combined_text = combine_comments(top_comment)
         combined_comments.append(combined_text)
 
-print(f"Total top-level threads found: {len(combined_comments)}\n")
+# Define sentiment words
+positive_words = ["long", "call", "calls"]
+negative_words = ["short", "put", "puts"]
 
-# Display each combined comment thread
+positive_count = 0
+negative_count = 0
+
+# Store filtered comments (those that mention the stock)
+filtered_comments = []
+
+# Filter comments that mention "block" or "XYZ" (case-insensitive) and accumulate sentiment counts
 for comment_text in combined_comments:
-    print(comment_text)
-    print('-' * 60)
+    lower_text = comment_text.lower()
+    if "Rivian" in lower_text or "RIVN" in lower_text:
+        filtered_comments.append(comment_text)
+        # Count occurrences of positive sentiment words
+        for pos in positive_words:
+            pos_occurrences = lower_text.count(pos)
+            if pos_occurrences > 0:
+                positive_count += pos_occurrences
+                print(f"Found positive sentiment word '{pos}' {pos_occurrences} times in comment. Total positive count: {positive_count}")
+        # Count occurrences of negative sentiment words
+        for neg in negative_words:
+            neg_occurrences = lower_text.count(neg)
+            if neg_occurrences > 0:
+                negative_count += neg_occurrences
+                print(f"Found negative sentiment word '{neg}' {neg_occurrences} times in comment. Total negative count: {negative_count}")
+
+# Output sentiment analysis results
+print("\nSentiment Analysis:")
+print(f"Positive sentiment count: {positive_count}")
+print(f"Negative sentiment count: {negative_count}")
